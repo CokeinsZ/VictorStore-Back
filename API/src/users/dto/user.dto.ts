@@ -4,24 +4,36 @@ import {
     IsString,
     MinLength,
     IsOptional,
-    IsEnum
+    IsEnum,
+    MaxLength,
+    IsNumber
   } from 'class-validator';
-  
-  export enum UserRole {
-    USER = 'user',
-    EDITOR = 'editor',
-    ADMIN = 'admin',
-  }
+import { user_role, user_status } from '../interfaces/user.interface';
 
   export class CreateUserDto {
-    @IsNotEmpty()
-    @IsString()
-    name: string;
+    @IsOptional()
+    @IsEnum(user_role, { message: 'role must be one of the following: user, editor, admin' } )
+    role?: user_role = user_role.EDITOR;
 
     @IsNotEmpty()
     @IsString()
-    @MinLength(3)
-    phone: string;
+    @MaxLength(20)
+    nick_name: string;
+
+    @IsNotEmpty()
+    @IsString()
+    @MaxLength(20)
+    first_name: string;
+
+    @IsNotEmpty()
+    @IsString()
+    @MaxLength(20)
+    middle_name: string;
+
+    @IsNotEmpty()
+    @IsString()
+    @MaxLength(20)
+    last_name: string;
   
     @IsNotEmpty()
     @IsEmail()
@@ -33,32 +45,47 @@ import {
     password: string;
 
     @IsOptional()
-    @IsEnum(UserRole, { message: 'role must be one of the following: user, editor, admin' } )
-    role?: UserRole = UserRole.EDITOR;
+    @IsEnum(user_status, { message: 'status must be one of the following: not_verified, active, inactive, banned' } )
+    status?: user_status = user_status.NOT_VERIFIED;
+
   }
   
   export class UpdateUserDto {
     @IsOptional()
     @IsString()
-    name?: string;
-  
+    @MaxLength(20)
+    nick_name?: string;
+
+    @IsOptional()
+    @IsString()
+    @MaxLength(20)
+    first_name?: string;
+
+    @IsOptional()
+    @IsString()
+    @MaxLength(20)
+    middle_name?: string;
+
+    @IsOptional()
+    @IsString()
+    @MaxLength(20)
+    last_name?: string;
+
     @IsOptional()
     @IsEmail()
     email?: string;
+  }
 
-    @IsOptional()
-    @IsString()
-    @MinLength(3)
-    phone?: string;
-  
-    @IsOptional()
-    @IsString()
-    @MinLength(6)
-    password?: string;
+  export class UpdateUserStatusDto {
+    @IsNotEmpty()
+    @IsEnum(user_status, { message: 'status must be one of the following: not_verified, active, inactive, banned' } )
+    status: user_status;
+  }
 
-    @IsOptional()
-    @IsEnum(UserRole, { message: 'role must be one of the following: user, editor, admin' } )
-    role?: UserRole;
+  export class UpdateUserRoleDto {
+    @IsNotEmpty()
+    @IsEnum(user_role, { message: 'role must be one of the following: user, editor, admin' } )
+    role: user_role;
   }
   
   export class LoginDto {
@@ -71,13 +98,11 @@ import {
     password: string;
   }
   
-  export class RefreshTokenDto {
+  export class ChangePasswordDto {
     @IsNotEmpty()
     @IsString()
-    refreshToken: string;
-  }
-  
-  export class ChangePasswordDto {
+    code: string;
+
     @IsNotEmpty()
     @IsString()
     currentPassword: string;
@@ -90,19 +115,9 @@ import {
   
   export class VerifyEmailDto {
     @IsNotEmpty()
-    @IsEmail()
-    email: string;
+    @IsNumber()
+    id: number;
   
-    @IsNotEmpty()
-    @IsString()
-    code: string;
-  }
-
-  export class VerifyPhoneDto {
-    @IsNotEmpty()
-    @IsString()
-    id: string;
-
     @IsNotEmpty()
     @IsString()
     code: string;

@@ -4,319 +4,184 @@ import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import * as bcrypt from 'bcrypt';
-import { User as SchemaUser, UserDocument } from './schema/user.schema';
-import { ChangePasswordDto, CreateUserDto, LoginDto, RefreshTokenDto, UpdateUserDto, VerifyEmailDto, VerifyPhoneDto } from './dto/user.dto';
+import { ChangePasswordDto, CreateUserDto, LoginDto, UpdateUserDto, UpdateUserRoleDto, UpdateUserStatusDto, VerifyEmailDto } from './dto/user.dto';
 import { EmailService } from '../email/email.service';
 import { User, UserServiceInterface } from './interfaces/user.interface';
 import { SmsService } from 'src/sms/sms.service';
+import { UsersRepository } from '../repositories/users.repository';
+import { VerificatoinCodesRepository } from 'src/repositories/verification-codes.repository';
 
 @Injectable()
 export class UsersService implements UserServiceInterface {
   constructor(
-    @InjectModel(SchemaUser.name) private userModel: Model<UserDocument>,
+    private readonly userRepository: UsersRepository,
+    private readonly verificationCodeRepository: VerificatoinCodesRepository,
     private jwtService: JwtService,
     private configService: ConfigService,
     private emailService: EmailService,
     private smsService: SmsService,
   ) {}
 
-  private toUserInterface(userDoc: UserDocument): User {
-    const userObj = userDoc.toObject();
-    userObj.id = userObj._id.toString();
-    delete userObj.password;
-    delete userObj.__v;
-    return userObj as User;
-  }
-
   async create(createUserDto: CreateUserDto): Promise<User> {
-    // Check if user already exists
-    const existingUser = await this.userModel.findOne({ email: createUserDto.email }).exec();
+    const existingUser = await this.userRepository.findByEmail(createUserDto.email);
     if (existingUser) {
-      throw new ConflictException('Email already registered');
+      throw new ConflictException('Email already exists');
     }
 
-    // Check if phone number already exists
-    const existingPhoneUser = await this.userModel.findOne({ phone: createUserDto.phone }).exec();
-    if (existingPhoneUser) {
-      throw new ConflictException('Phone number already registered');
-    }
-
-    // Check if phone number is valid
-    if (!(/^\+[1-9]\d{2,14}$/.test(createUserDto.phone))) {
-      throw new BadRequestException('Invalid phone number format');
-    }
-
-    // Hash password
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
-
-    // Generate verification code
-    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString(); 
-    const verificationCodeExpires = new Date();
-    verificationCodeExpires.setMinutes(verificationCodeExpires.getMinutes() + 5); 
-
-    // Create new user
-    const newUser = new this.userModel({
+    const newUser = {
       ...createUserDto,
       password: hashedPassword,
-      verificationCode,
-      verificationCodeExpires,
-    });
+    };
 
-    const savedUser = await newUser.save();
+    const savedUser = await this.userRepository.createUser(newUser);
+    if (!savedUser) {
+      throw new BadRequestException('User creation failed');
+    }
+
+    // Generate verification code and save it to the database
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    await this.verificationCodeRepository.create(savedUser.id, verificationCode);
 
     // Send verification email
     await this.emailService.sendVerificationEmail(
       savedUser.email,
-      savedUser.name,
+      savedUser.nick_name,
       verificationCode,
     );
 
-    // Return user without sensitive data
     return this.toUserInterface(savedUser);
   }
 
-  async verifyEmail(verifyEmailDto: VerifyEmailDto): Promise<{ message: string }> {
-    const { email, code } = verifyEmailDto;
-    const user = await this.userModel.findOne({ email }).exec();
-    
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    if (user.isVerified) {
-      return { message: 'Email already verified' };
-    }
-
-    if (user.verificationCode !== code) {
-      throw new BadRequestException('Invalid verification code');
-    }
-
-    if (user.verificationCodeExpires && new Date() > user.verificationCodeExpires) {
-      throw new BadRequestException('Verification code expired');
-    }
-
-    // Update user verification status
-    user.isVerified = true;
-    user.verificationCode = undefined;
-    user.verificationCodeExpires = undefined;
-    await user.save();
-
-    return { message: 'Email verified successfully' };
-  }
-
-  async verifyPhone(verifyPhoneDto: VerifyPhoneDto): Promise<{ message: string, tokens: { accessToken: string, refreshToken: string }, user: User }> {
-    const { id, code } = verifyPhoneDto;
-    const user = await this.userModel.findById(id).exec();
-    if (!user) {
-      throw new NotFoundException(`User with ID "${id}" not found`);
-    }
-
-    if (user.verificationCode !== code) {
-      throw new UnauthorizedException('Invalid verification code');
-    }
-
-    if (user.verificationCodeExpires && new Date() > user.verificationCodeExpires) {
-      throw new UnauthorizedException('Verification code expired');
-    }
-    
-    // Generate tokens
-    // Access the _id as a property of the document
-    const tokens = await this.getTokens(user.id, user.email, user.role);
-    
-    // Update refresh token in database and remove verification code
-    const hashedRefreshToken = await bcrypt.hash(tokens.refreshToken, 10);
-    user.verificationCode = undefined;
-    user.verificationCodeExpires = undefined;
-    user.refreshToken = hashedRefreshToken;
-    const updatedUser = await user.save();
-
-    return {
-      message: 'Phone number verified successfully, you are now logged in',
-      tokens,
-      user: this.toUserInterface(updatedUser),
-    };
-  }
-
-  async login(loginDto: LoginDto): Promise<{ message: string, userId: string }> {
-    const user = await this.userModel.findOne({ email: loginDto.email }).exec();
-    
-    if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
-
-    // Check if user is verified
-    if (!user.isVerified) {
-      throw new UnauthorizedException('Please verify your email before logging in');
-    }
-
-    // Compare passwords
-    const isPasswordValid = await bcrypt.compare(loginDto.password, user.password);
-    if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
-
-    // Generate verification code for SMS
-    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-    const verificationCodeExpires = new Date();
-    verificationCodeExpires.setMinutes(verificationCodeExpires.getMinutes() + 5);
-
-    user.verificationCode = verificationCode;
-    user.verificationCodeExpires = verificationCodeExpires;
-    await user.save();
-
-    this.smsService.sendSms(
-      user.phone,
-      user.name,
-      verificationCode,
-    );
-
-    return {
-      message: 'Correct credentials, continue login process by verifying the code sent to your phone number',
-      userId: user.id,
-    };
-  }
-
-  async refreshToken(refreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {
-    try {
-      // Verify refresh token
-      const payload = this.jwtService.verify(refreshToken, {
-        secret: this.configService.get('JWT_REFRESH_SECRET'),
-      });
-
-      // Find user
-      const user = await this.userModel.findById(payload.sub).exec();
-      if (!user) {
-        throw new UnauthorizedException('Invalid token');
-      }
-
-      // Validate stored refresh token
-      if (!user.refreshToken) {
-        throw new UnauthorizedException('Invalid token');
-      }
-      
-      const isRefreshTokenValid = await bcrypt.compare(
-        refreshToken,
-        user.refreshToken
-      );
-      
-      if (!isRefreshTokenValid) {
-        throw new UnauthorizedException('Invalid token');
-      }
-
-      // Generate new tokens
-      const tokens = await this.getTokens(user.id, user.email, user.role);
-      
-      // Update refresh token in database
-      const hashedRefreshToken = await bcrypt.hash(tokens.refreshToken, 10);
-      user.refreshToken = hashedRefreshToken;
-      await user.save();
-
-      return tokens;
-    } catch (error) {
-      throw new UnauthorizedException('Invalid token');
-    }
-  }
-
   async findAll(): Promise<User[]> {
-    const users = await this.userModel.find().exec();
+    const users = await this.userRepository.findAll();
+
     return users.map(user => this.toUserInterface(user));
   }
 
-  async findOne(id: string): Promise<User> {
-    const user = await this.userModel.findById(id).exec();
+  async findOne(id: number): Promise<User> {
+    const user = await this.userRepository.findById(id);
     if (!user) {
-      throw new NotFoundException(`User with ID "${id}" not found`);
+      throw new NotFoundException('User not found');
     }
     return this.toUserInterface(user);
   }
 
   async findByEmail(email: string): Promise<User> {
-    const user = await this.userModel.findOne({ email }).exec();
+    const user = await this.userRepository.findByEmail(email);
     if (!user) {
-      throw new NotFoundException(`User with email "${email}" not found`);
+      throw new NotFoundException('User not found');
     }
     return this.toUserInterface(user);
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
-    const user = await this.userModel.findById(id).exec();
+  async findByNickName(nick_name: string): Promise<User> {
+    const user = await this.userRepository.findByNickName(nick_name);
     if (!user) {
-      throw new NotFoundException(`User with ID "${id}" not found`);
+      throw new NotFoundException('User not found');
     }
+    return this.toUserInterface(user);
+  }
 
-    // If updating email, check if new email is already taken
-    if (updateUserDto.email && updateUserDto.email !== user.email) {
-      const existingUser = await this.userModel.findOne({ email: updateUserDto.email }).exec();
-      if (existingUser) {
-        throw new ConflictException('Email already registered');
-      }
+  async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
+    const updatedUser = await this.userRepository.updateUser(id, updateUserDto);
+    if (!updatedUser) {
+      throw new NotFoundException('User not found');
     }
-
-    // If updating password, hash it
-    if (updateUserDto.password) {
-      updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
-    }
-
-    // Update user
-    Object.assign(user, updateUserDto);
-    const updatedUser = await user.save();
     return this.toUserInterface(updatedUser);
   }
 
-  async remove(id: string): Promise<void> {
-    const result = await this.userModel.deleteOne({ _id: id }).exec();
-    if (result.deletedCount === 0) {
-      throw new NotFoundException(`User with ID "${id}" not found`);
+  async changePassword(id: number, changePasswordDto: ChangePasswordDto): Promise<void> {
+    const dbCode = await this.verificationCodeRepository.find(id);
+    if (!dbCode) {
+      throw new NotFoundException('Verification code not found, please request a new one');
     }
-  }
 
-  async changePassword(id: string, changePasswordDto: ChangePasswordDto): Promise<void> {
-    const user = await this.userModel.findById(id).exec();
+    if (dbCode.code !== changePasswordDto.code) {
+      throw new UnauthorizedException('Invalid verification code');
+    }
+
+    if (new Date() > dbCode.expires_at) {
+      throw new UnauthorizedException('Verification code expired, please request a new one');
+    }
+
+    const user = await this.userRepository.findById(id);
     if (!user) {
-      throw new NotFoundException(`User with ID "${id}" not found`);
+      throw new NotFoundException('User not found');
     }
-
-    // Verify current password
     const isPasswordValid = await bcrypt.compare(changePasswordDto.currentPassword, user.password);
     if (!isPasswordValid) {
       throw new UnauthorizedException('Current password is incorrect');
     }
 
-    // Hash new password
     const hashedPassword = await bcrypt.hash(changePasswordDto.newPassword, 10);
-    user.password = hashedPassword;
-    await user.save();
+    await this.userRepository.updateUserPassword(id, hashedPassword);
   }
 
-  private async getTokens(userId: string, email: string, role: string): Promise<{ accessToken: string; refreshToken: string }> {
-    const [accessToken, refreshToken] = await Promise.all([
-      this.jwtService.signAsync(
-        {
-          sub: userId,
-          email,
-          role,
-        },
-        {
-          secret: this.configService.get('JWT_ACCESS_SECRET'),
-          expiresIn: this.configService.get('JWT_ACCESS_EXPIRATION'),
-        },
-      ),
-      this.jwtService.signAsync(
-        {
-          sub: userId,
-          email,
-          role,
-        },
-        {
-          secret: this.configService.get('JWT_REFRESH_SECRET'),
-          expiresIn: this.configService.get('JWT_REFRESH_EXPIRATION'),
-        },
-      ),
-    ]);
+  async updateStatus(id: number, status: UpdateUserStatusDto): Promise<User> {
+    const user = await this.userRepository.updateUserStatus(id, status.status);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    return this.toUserInterface(user);
+  }
 
+  async updateRole(id: number, role: UpdateUserRoleDto): Promise<User> {
+    const user = await this.userRepository.updateUserRole(id, role.role);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    return this.toUserInterface(user);
+  }
+
+  async remove(id: number): Promise<void> {
+    return await this.userRepository.deleteUser(id);
+  }
+
+  async verifyEmail(verifyEmailDto: VerifyEmailDto): Promise<{ message: string; }> {
+    const dbCode = await this.verificationCodeRepository.find(verifyEmailDto.id);
+    if (!dbCode) {
+      throw new NotFoundException('Verification code not found, please request a new one');
+    }
+    if (dbCode.code !== verifyEmailDto.code) {
+      throw new UnauthorizedException('Invalid verification code');
+    }
+    if (new Date() > dbCode.expires_at) {
+      throw new UnauthorizedException('Verification code expired, please request a new one');
+    }
+    const user = await this.userRepository.updateUserStatus(verifyEmailDto.id, 'active');
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    await this.verificationCodeRepository.erase(verifyEmailDto.id);
+    return { message: 'Email verified successfully' };
+  }
+
+  async login(loginDto: LoginDto): Promise<{ message: string; userId: string; token: string; }> {
+    const user = await this.userRepository.findByEmail(loginDto.email);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    const isPasswordValid = await bcrypt.compare(loginDto.password, user.password);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid password');
+    }
+    const payload = { sub: user.id, email: user.email, role: user.role };
+    const token = this.jwtService.sign(payload, {
+      secret: this.configService.get<string>('JWT_SECRET'),
+      expiresIn: this.configService.get<string>('JWT_EXPIRATION'),
+    });
     return {
-      accessToken,
-      refreshToken,
+      message: 'Login successful',
+      userId: user.id.toString(),
+      token,
     };
   }
+
+  private toUserInterface(userDoc: any): User {
+    const userObj = userDoc.toObject();
+    delete userObj.password;
+    return userObj as User;
+  }
+  
 }

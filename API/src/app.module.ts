@@ -8,6 +8,9 @@ import { JwtAuthGuard } from './users/guards/jwt-auth.guard';
 import { AbilitiesModule } from './abilities/abilities.module';
 import { PoliciesGuard } from './users/guards/policies.guard';
 import { CategoriesModule } from './categories/categories.module';
+import { DatabaseService } from './database/database.service';
+import { DatabaseModule } from './database/database.module';
+import { RepositoriesModule } from './repositories/repositories.module';
 
 @Module({
   imports: [
@@ -25,6 +28,8 @@ import { CategoriesModule } from './categories/categories.module';
     ProductsModule,
     AbilitiesModule,
     CategoriesModule,
+    DatabaseModule,
+    RepositoriesModule,
   ],
 
   providers: [
@@ -36,6 +41,7 @@ import { CategoriesModule } from './categories/categories.module';
       provide: APP_GUARD,
       useClass: PoliciesGuard,
     },
+    DatabaseService,
   ],
 })
 export class AppModule {}

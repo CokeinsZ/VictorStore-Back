@@ -48,17 +48,10 @@ CREATE TABLE Product_Category (
 );
 GO
 
--- Tabla Roles
-CREATE TABLE Roles (
-    id INT IDENTITY(1,1) PRIMARY KEY,
-    name VARCHAR(10) NOT NULL
-);
-GO
-
 -- En SQL Server no se crean tipos ENUM, por lo que se simula en la tabla Users mediante CHECK.
 CREATE TABLE Users (
     id INT IDENTITY(1,1) PRIMARY KEY,
-    role_id INT NULL,
+    role VARCHAR(20) DEFAULT 'user',
     nick_name VARCHAR(20) NOT NULL UNIQUE,
     first_name VARCHAR(20),
     middle_name VARCHAR(20),
@@ -66,11 +59,9 @@ CREATE TABLE Users (
     email VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
     status VARCHAR(20) DEFAULT 'active',
-    CONSTRAINT FK_Users_Roles FOREIGN KEY (role_id)
-        REFERENCES Roles(id)
-        ON DELETE SET NULL
-        ON UPDATE CASCADE,
-    CONSTRAINT CHK_Users_Status CHECK (status IN ('active', 'inactive', 'banned'))
+
+    CONSTRAINT CHK_Users_Role CHECK (role IN ('admin', 'editor', 'user')),
+    CONSTRAINT CHK_Users_Status CHECK (status IN ('not verified', 'active', 'inactive', 'banned'))
 );
 GO
 
@@ -127,3 +118,15 @@ CREATE TABLE Order_Items (
         ON UPDATE CASCADE
 );
 GO
+
+-- Tabla para almacenar los códigos de verificación de usuarios
+CREATE TABLE Verification_Codes (
+    user_id INT PRIMARY KEY,
+    code VARCHAR(10) NOT NULL,
+    created_at DATETIME2 DEFAULT GETDATE(),
+    expires_at DATETIME2 DEFAULT DATEADD(MINUTE, 15, GETDATE()),
+    CONSTRAINT FK_VerificationCodes_Users FOREIGN KEY (user_id)
+        REFERENCES Users(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);

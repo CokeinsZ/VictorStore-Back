@@ -13,3 +13,10 @@ BEGIN
     PRINT 'Filas relacionadas eliminadas de Product_Category tras eliminar una categoría.';
 END;
 GO
+
+-- Consultar los triggers creados en la base de datos
+SELECT name AS TriggerName,
+    parent_class_desc AS TableOrView,
+    type_desc AS TriggerType,
+    is_disabled AS IsDisabled
+FROM sys.triggers;
