@@ -168,8 +168,8 @@ export class UsersService implements UserServiceInterface {
     }
     const payload = { sub: user.id, email: user.email, role: user.role };
     const token = this.jwtService.sign(payload, {
-      secret: this.configService.get<string>('JWT_SECRET'),
-      expiresIn: this.configService.get<string>('JWT_EXPIRATION'),
+      secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
+      expiresIn: this.configService.get<string>('JWT_ACCESS_EXPIRATION'),
     });
     return {
       message: 'Login successful',

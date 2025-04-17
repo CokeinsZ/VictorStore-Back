@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Types } from 'mongoose'; // Importa Types de mongoose
-import { UserRole } from 'src/users/dto/user.dto';
+import { user_role } from 'src/users/interfaces/user.interface'; 
 
 // Define possible actions
 export enum Action {
@@ -27,71 +27,146 @@ export interface Ability {
 
 @Injectable()
 export class AbilityFactory {
-  defineAbilitiesFor(user: any): Ability { // Cambiamos User por any para evitar problemas de tipo
+  private abilities_map: Map<user_role, Ability>;
+
+  constructor() {
+    this.abilities_map = new Map<user_role, Ability>();
+    this.fillAbilitiesMap();
+  }
+
+  /**
+   * @description
+   * This method initializes the abilities map for different user roles.
+   */
+  private fillAbilitiesMap() {
+    // Define abilities for ADMIN
+    const adminAbility = this.defineAdminAbilities();
+    this.abilities_map.set(user_role.ADMIN, adminAbility);
+
+    // Define abilities for EDITOR
+    const editorAbility = this.defineEditorAbilities();
+    this.abilities_map.set(user_role.EDITOR, editorAbility);
+
+    // Define abilities for USER
+    const userAbility = this.defineUserAbilities();
+    this.abilities_map.set(user_role.USER, userAbility);
+  }
+
+  private defineAdminAbilities(): Ability {
     const rules: Rule[] = [];
 
-    // User abilities
-    if (user?.role === UserRole.EDITOR) {
-      // Obtenemos el ID de manera segura
-      const userId = user._id || user.id;
-
-      rules.push({
-        action: Action.Read,
-        subject: 'all',
-      });
-
-      rules.push({
-        action: Action.Create,
-        subject: 'Product',
-      });
-
-      // User can update their own products
-      rules.push({
-        action: Action.Update,
-        subject: 'Product',
-        conditions: { createdBy: userId },
-      });
-
-      // User can delete their own products
-      rules.push({
-        action: Action.Delete,
-        subject: 'Product',
-        conditions: { createdBy: userId },
-      });
-
-      
-      rules.push({
-        action: Action.Create,
-        subject: 'Category',
-      });
-
-      rules.push({
-        action: Action.Update,
-        subject: 'Category',
-      });
-
-      rules.push({
-        action: Action.Delete,
-        subject: 'Category',
-      });
-    }
-
-    // Admin abilities
-    if (user?.role === UserRole.ADMIN) {
-      // Admin can manage all
-      rules.push({
-        action: Action.Manage,
-        subject: 'all',
-      });
-    }
+    rules.push({
+      action: Action.Manage,
+      subject: 'all',
+    });
     return { rules };
   }
 
-  can(ability: Ability, action: Action, subject: string, data?: any): boolean {
+  private defineEditorAbilities(): Ability {
+    const rules: Rule[] = [];
+
+    rules.push({
+      action: Action.Manage,
+      subject: 'Product',
+    });
+    
+    rules.push({
+      action: Action.Manage,
+      subject: 'Category',
+    });
+
+    rules.push({
+      action: Action.Manage,
+      subject: 'Order',
+    });
+
+    rules.push({
+      action: Action.Read,
+      subject: 'all',
+    });
+
+    rules.push({
+      action: Action.Update,
+      subject: 'User.role',
+    });
+
+    rules.push({
+      action: Action.Update,
+      subject: 'User.status',
+    });
+
+    return { rules };
+  }
+
+  private defineUserAbilities(): Ability {
+    const rules: Rule[] = [];
+
+    rules.push({
+      action: Action.Read,
+      subject: 'Product',
+    });
+
+    rules.push({
+      action: Action.Read,
+      subject: 'Category',
+    });
+
+    rules.push({
+      action: Action.Read,
+      subject: 'Order',
+    });
+
+    rules.push({
+      action: Action.Create,
+      subject: 'Order',
+    });
+
+    rules.push({
+      action: Action.Update,
+      subject: 'Order',
+      conditions: {
+        status: 'not processed',
+      },
+    });
+
+    rules.push({
+      action: Action.Delete,
+      subject: 'Order',
+      conditions: {
+        status: 'not processed',
+      },
+    });
+
+    rules.push({
+      action: Action.Read,
+      subject: 'User',
+      conditions: {
+        id: 'User.id',
+      },
+    });
+
+    rules.push({
+      action: Action.Update,
+      subject: 'User',
+      conditions: {
+        id: 'User.id',
+      },
+    });
+    
+    return { rules };
+  }
+
+  can(user_rol: user_role, action: Action, subject: string, data?: any): boolean {
     // Si no hay reglas o habilidad definida, denegar acceso
-    if (!ability || !ability.rules) {
+    if (!user_rol || !action || !subject) {
       return false;
     }
+
+    const ability = this.abilities_map.get(user_rol);
+    if (!ability) {
+      return false;
+    }
+
     const manageRule = ability.rules.find(
       (rule) =>
         rule.action === Action.Manage &&

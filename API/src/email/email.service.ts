@@ -19,7 +19,7 @@ export class EmailService {
       },
     });
 
-    this.appName = this.configService.get('APP_NAME') || 'Backend UAM';
+    this.appName = this.configService.get('APP_NAME') || 'Victor Store';
     this.appUrl = this.configService.get('APP_URL') || 'https://backend-uam.com';
   }
   async sendVerificationEmail(
@@ -139,7 +139,7 @@ export class EmailService {
           
           <p>Este código expirará en <strong>5 minutos</strong>.</p>
           
-          <a href="${this.appUrl}/verify" class="btn">Verificar mi cuenta</a>
+          <a href="${this.appUrl}/verify/${code}" class="btn">Verificar mi cuenta</a>
           
           <div class="warning">
             <p>Si no solicitaste este código, puedes ignorar este correo. Si no reconoces esta actividad, por favor contacta a nuestro equipo de soporte.</p>
