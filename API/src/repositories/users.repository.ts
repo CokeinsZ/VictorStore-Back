@@ -47,21 +47,27 @@ export class UsersRepository {
   }
 
   async updateUser(id: number, user: Partial<User>): Promise<User> {
+    let params = ``
+    let values = {}
+    for (const key in user) {
+      if (!user[key]) {
+        delete user[key];
+      }
+
+      if (key === 'id') {}; // Skip id field in the update
+
+      params += `${key} = @${key}, `
+      values[key] = user[key]
+    }
+    values['Id'] = id // Add id to the values
+    
     const query = `
       UPDATE Users
-      SET nick_name = @NickName, first_name = @FirstName, middle_name = @MiddleName,
-          last_name = @LastName, email = @Email
+      SET ${params.slice(0, -2)} -- Remove the trailing comma and space
       OUTPUT INSERTED.*
       WHERE id = @Id
     `;
-    const result = await this.databaseService.executeQuery<User>(query, {
-      Id: id,
-      NickName: user.nick_name,
-      FirstName: user.first_name,
-      MiddleName: user.middle_name,
-      LastName: user.last_name,
-      Email: user.email,
-    });
+    const result = await this.databaseService.executeQuery<User>(query, values);
     return result[0];
   }
 

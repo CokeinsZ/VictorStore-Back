@@ -24,10 +24,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     if (!payload) {
       throw new UnauthorizedException('Invalid token');
     }
-    if (!payload.sub || !payload.email || !payload.role) {
+    if (!payload.sub || !payload.email || !payload.role || !payload.nick_name) {
       throw new InternalServerErrorException('Token payload is missing required fields');
     }
 
-    return { id: payload.sub, email: payload.email, role: payload.role };
+    const id = Number(payload.sub);
+    if (isNaN(id)) {
+      throw new InternalServerErrorException('Token payload sub is not a valid number');
+    }
+
+    return { id, email: payload.email, role: payload.role, nick_name: payload.nick_name };
   }
 }

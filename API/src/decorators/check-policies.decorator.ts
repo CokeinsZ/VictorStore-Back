@@ -4,7 +4,6 @@ import { Action } from '../abilities/ability.factory';
 export interface PolicyHandler {
     action: Action;
     subject: string;
-    checkData? : boolean
 }
 
 export const CHECK_POLICIES_KEY = 'check-policies';

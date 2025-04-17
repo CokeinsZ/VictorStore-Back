@@ -6,7 +6,7 @@ import { Model } from 'mongoose';
 import * as bcrypt from 'bcrypt';
 import { ChangePasswordDto, CreateUserDto, LoginDto, UpdateUserDto, UpdateUserRoleDto, UpdateUserStatusDto, VerifyEmailDto } from './dto/user.dto';
 import { EmailService } from '../email/email.service';
-import { User, UserServiceInterface } from './interfaces/user.interface';
+import { User, user_status, UserServiceInterface } from './interfaces/user.interface';
 import { UsersRepository } from '../repositories/users.repository';
 import { VerificatoinCodesRepository } from 'src/repositories/verification-codes.repository';
 
@@ -155,16 +155,29 @@ export class UsersService implements UserServiceInterface {
     return { message: 'Email verified successfully' };
   }
 
-  async login(loginDto: LoginDto): Promise<{ message: string; userId: string; token: string; }> {
+  async login(loginDto: LoginDto): Promise<{ message: string; userId: string; email: string; role: string; nick_name: string; token: string; }> {
     const user = await this.userRepository.findByEmail(loginDto.email);
     if (!user) {
       throw new NotFoundException('User not found');
     }
+
+    if (user.status !== user_status.ACTIVE) {
+      if (user.status === user_status.NOT_VERIFIED) {
+        throw new UnauthorizedException('Please verify your email');
+      }
+
+      if (user.status === user_status.BANNED) {
+        throw new UnauthorizedException('User is banned, please contact support');
+      }
+
+      throw new UnauthorizedException('User is not active, please contact support');
+    }
+
     const isPasswordValid = await bcrypt.compare(loginDto.password, user.password);
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid password');
     }
-    const payload = { sub: user.id, email: user.email, role: user.role };
+    const payload = { sub: user.id, email: user.email, role: user.role, nick_name: user.nick_name };
     const token = this.jwtService.sign(payload, {
       secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
       expiresIn: this.configService.get<string>('JWT_ACCESS_EXPIRATION'),
@@ -172,12 +185,16 @@ export class UsersService implements UserServiceInterface {
     return {
       message: 'Login successful',
       userId: user.id.toString(),
+      email: user.email,
+      role: user.role,
+      nick_name: user.nick_name,
       token,
     };
   }
 
   private toUserInterface(user: any): User {
-    console.log('UserDoc:', user);
+    // Eliminate sensitive information such as password
+    // and return only the necessary fields
     return {
       id: user.id,
       role: user.role,

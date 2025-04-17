@@ -15,9 +15,6 @@ export enum Action {
 export interface Rule {
   action: Action;
   subject: string;
-  conditions?: any;
-  fields?: string[];
-  inverted?: boolean;
 }
 
 // Define abilities container
@@ -124,40 +121,28 @@ export class AbilityFactory {
     rules.push({
       action: Action.Update,
       subject: 'Order',
-      conditions: {
-        status: 'not processed',
-      },
     });
 
     rules.push({
       action: Action.Delete,
       subject: 'Order',
-      conditions: {
-        status: 'not processed',
-      },
     });
 
     rules.push({
       action: Action.Read,
       subject: 'User',
-      conditions: {
-        id: 'User.id',
-      },
     });
 
     rules.push({
       action: Action.Update,
       subject: 'User',
-      conditions: {
-        id: 'User.id',
-      },
     });
     
     return { rules };
   }
 
-  can(user_rol: user_role, action: Action, subject: string, data?: any): boolean {
-    // Si no hay reglas o habilidad definida, denegar acceso
+  can(user_rol: user_role, action: Action, subject: string): boolean {
+    // Check if user role, action, and subject are provided
     if (!user_rol || !action || !subject) {
       return false;
     }
@@ -187,29 +172,10 @@ export class AbilityFactory {
     // No rules = no permission
     if (rules.length === 0) {
       return false;
+    
+    } else {
+      return true;
+    
     }
-
-    // Check conditions if they exist
-    return rules.some((rule) => {
-      if (!rule.conditions) {
-        return true;
-      }
-
-      // Check all conditions
-      return Object.entries(rule.conditions).every(([key, value]) => {
-        // Si estamos comparando ObjectIds, necesitamos convertirlos a string
-        if (data && data[key] && value) {
-          // Si el valor es un ObjectId, conviértelo a string para comparar
-          const dataValue = data[key] instanceof Types.ObjectId ? 
-                            data[key].toString() : data[key];
-          const condValue = value instanceof Types.ObjectId ?
-                            value.toString() : value;
-                            
-          console.log('Comparando:', dataValue, condValue);
-          return dataValue === condValue;
-        }
-        return false;
-      });
-    });
   }
 }
