@@ -58,7 +58,7 @@ CREATE TABLE Users (
     last_name VARCHAR(20),
     email VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
-    status VARCHAR(20) DEFAULT 'active',
+    status VARCHAR(20) DEFAULT 'not verified',
 
     CONSTRAINT CHK_Users_Role CHECK (role IN ('admin', 'editor', 'user')),
     CONSTRAINT CHK_Users_Status CHECK (status IN ('not verified', 'active', 'inactive', 'banned'))

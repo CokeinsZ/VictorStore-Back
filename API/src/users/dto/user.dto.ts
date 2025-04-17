@@ -13,7 +13,7 @@ import { user_role, user_status } from '../interfaces/user.interface';
   export class CreateUserDto {
     @IsOptional()
     @IsEnum(user_role, { message: 'role must be one of the following: user, editor, admin' } )
-    role?: user_role = user_role.EDITOR;
+    role?: user_role = user_role.USER;
 
     @IsNotEmpty()
     @IsString()

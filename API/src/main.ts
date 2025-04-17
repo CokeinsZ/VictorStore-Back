@@ -3,11 +3,13 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { readFileSync } from 'fs';
 import { ConfigService } from '@nestjs/config';
+import * as crypto from 'crypto';
 
 async function bootstrap() {
   const httpsOptions = {
-    key: readFileSync('./secrets/private-key.pem'),
-    cert: readFileSync('./secrets/certificate.pem'),
+    key: readFileSync('./secrets/key.pem'),
+    cert: readFileSync('./secrets/cert.pem'),
+    passphrase: process.env.PRIVATE_KEY_PASSPHRASE,
   };
 
   const app = await NestFactory.create(AppModule, {

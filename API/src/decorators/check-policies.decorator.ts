@@ -1,5 +1,5 @@
 import { SetMetadata } from '@nestjs/common';
-import { Action } from '../../abilities/ability.factory';
+import { Action } from '../abilities/ability.factory';
 
 export interface PolicyHandler {
     action: Action;

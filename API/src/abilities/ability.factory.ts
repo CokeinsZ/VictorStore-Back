@@ -205,6 +205,7 @@ export class AbilityFactory {
           const condValue = value instanceof Types.ObjectId ?
                             value.toString() : value;
                             
+          console.log('Comparando:', dataValue, condValue);
           return dataValue === condValue;
         }
         return false;

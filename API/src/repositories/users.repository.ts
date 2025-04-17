@@ -31,9 +31,9 @@ export class UsersRepository {
 
   async createUser(user: Partial<User>): Promise<User> {
     const query = `
-      INSERT INTO Users (nick_name, first_name, middle_name, last_name, email, password, role, status)
+      INSERT INTO Users (nick_name, first_name, middle_name, last_name, email, password)
       OUTPUT INSERTED.*
-      VALUES (@NickName, @FirstName, @MiddleName, @LastName, @Email, @Password, @Role, @Status)
+      VALUES (@NickName, @FirstName, @MiddleName, @LastName, @Email, @Password)
     `;
     const result = await this.databaseService.executeQuery<User>(query, {
       NickName: user.nick_name,
@@ -42,8 +42,6 @@ export class UsersRepository {
       LastName: user.last_name,
       Email: user.email,
       Password: user.password,
-      Role: user.role,
-      Status: user.status,
     });
     return result[0];
   }

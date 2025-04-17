@@ -2,12 +2,10 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { UsersModule } from './users/users.module';
-import { ProductsModule } from './products/products.module';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { AbilitiesModule } from './abilities/abilities.module';
 import { PoliciesGuard } from './guards/policies.guard';
-import { CategoriesModule } from './categories/categories.module';
 import { DatabaseService } from './database/database.service';
 import { DatabaseModule } from './database/database.module';
 import { RepositoriesModule } from './repositories/repositories.module';
@@ -25,9 +23,7 @@ import { RepositoriesModule } from './repositories/repositories.module';
       }),
     }),
     UsersModule,
-    ProductsModule,
     AbilitiesModule,
-    CategoriesModule,
     DatabaseModule,
     RepositoriesModule,
   ],

@@ -7,7 +7,6 @@ import * as bcrypt from 'bcrypt';
 import { ChangePasswordDto, CreateUserDto, LoginDto, UpdateUserDto, UpdateUserRoleDto, UpdateUserStatusDto, VerifyEmailDto } from './dto/user.dto';
 import { EmailService } from '../email/email.service';
 import { User, UserServiceInterface } from './interfaces/user.interface';
-import { SmsService } from 'src/sms/sms.service';
 import { UsersRepository } from '../repositories/users.repository';
 import { VerificatoinCodesRepository } from 'src/repositories/verification-codes.repository';
 
@@ -19,7 +18,6 @@ export class UsersService implements UserServiceInterface {
     private jwtService: JwtService,
     private configService: ConfigService,
     private emailService: EmailService,
-    private smsService: SmsService,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
@@ -178,10 +176,18 @@ export class UsersService implements UserServiceInterface {
     };
   }
 
-  private toUserInterface(userDoc: any): User {
-    const userObj = userDoc.toObject();
-    delete userObj.password;
-    return userObj as User;
+  private toUserInterface(user: any): User {
+    console.log('UserDoc:', user);
+    return {
+      id: user.id,
+      role: user.role,
+      nick_name: user.nick_name,
+      first_name: user.first_name,
+      middle_name: user.middle_name,
+      last_name: user.last_name,
+      email: user.email,
+      status: user.status,
+    } as User;
   }
   
 }

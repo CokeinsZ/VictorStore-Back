@@ -6,7 +6,6 @@ import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
 import { JwtStrategy } from '../strategies/jwt.strategy';
 import { EmailModule } from '../email/email.module';
-import { SmsModule } from 'src/sms/sms.module';
 import { AbilitiesModule } from 'src/abilities/abilities.module';
 import { RepositoriesModule } from 'src/repositories/repositories.module';
 
@@ -15,7 +14,6 @@ import { RepositoriesModule } from 'src/repositories/repositories.module';
     JwtModule.register({}),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     EmailModule,
-    SmsModule,
     AbilitiesModule,
     RepositoriesModule
   ],
