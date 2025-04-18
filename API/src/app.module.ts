@@ -9,6 +9,7 @@ import { PoliciesGuard } from './tools/guards/policies.guard';
 import { DatabaseService } from './database/database.service';
 import { DatabaseModule } from './database/database.module';
 import { RepositoriesModule } from './database/repositories/repositories.module';
+import { CategoriesModule } from './categories/categories.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { RepositoriesModule } from './database/repositories/repositories.module'
     AbilitiesModule,
     DatabaseModule,
     RepositoriesModule,
+    CategoriesModule,
   ],
 
   providers: [
