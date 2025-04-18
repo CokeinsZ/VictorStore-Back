@@ -22,11 +22,11 @@ import {
   UpdateUserStatusDto,
   UpdateUserRoleDto,
 } from './dto/user.dto';
-import { Public } from '../decorators/public.decorator';
-import { CheckPolicies } from '../decorators/check-policies.decorator';
-import { Action } from '../abilities/ability.factory';
-import { RolesGuard } from 'src/guards/roles.guard';
-import { Roles } from 'src/decorators/roles.decorator';
+import { Public } from '../tools/decorators/public.decorator';
+import { CheckPolicies } from '../tools/decorators/check-policies.decorator';
+import { Action } from '../tools/abilities/ability.factory';
+import { RolesGuard } from 'src/tools/guards/roles.guard';
+import { Roles } from 'src/tools/decorators/roles.decorator';
 
 @Controller('vs/api/v1/users')
 export class UsersController {

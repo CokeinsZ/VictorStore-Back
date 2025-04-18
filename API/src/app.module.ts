@@ -3,12 +3,12 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { UsersModule } from './users/users.module';
 import { APP_GUARD } from '@nestjs/core';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { AbilitiesModule } from './abilities/abilities.module';
-import { PoliciesGuard } from './guards/policies.guard';
+import { JwtAuthGuard } from './tools/guards/jwt-auth.guard';
+import { AbilitiesModule } from './tools/abilities/abilities.module';
+import { PoliciesGuard } from './tools/guards/policies.guard';
 import { DatabaseService } from './database/database.service';
 import { DatabaseModule } from './database/database.module';
-import { RepositoriesModule } from './repositories/repositories.module';
+import { RepositoriesModule } from './database/repositories/repositories.module';
 
 @Module({
   imports: [

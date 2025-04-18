@@ -1,14 +1,12 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
 import * as bcrypt from 'bcrypt';
 import { ChangePasswordDto, CreateUserDto, LoginDto, UpdateUserDto, UpdateUserRoleDto, UpdateUserStatusDto, VerifyEmailDto } from './dto/user.dto';
 import { EmailService } from '../email/email.service';
 import { User, user_status, UserServiceInterface } from './interfaces/user.interface';
-import { UsersRepository } from '../repositories/users.repository';
-import { VerificatoinCodesRepository } from 'src/repositories/verification-codes.repository';
+import { UsersRepository } from '../database/repositories/users.repository';
+import { VerificatoinCodesRepository } from 'src/database/repositories/verification-codes.repository';
 
 @Injectable()
 export class UsersService implements UserServiceInterface {

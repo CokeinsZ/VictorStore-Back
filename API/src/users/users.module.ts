@@ -1,13 +1,12 @@
 import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
-import { JwtStrategy } from '../strategies/jwt.strategy';
+import { JwtStrategy } from '../tools/strategies/jwt.strategy';
 import { EmailModule } from '../email/email.module';
-import { AbilitiesModule } from 'src/abilities/abilities.module';
-import { RepositoriesModule } from 'src/repositories/repositories.module';
+import { AbilitiesModule } from 'src/tools/abilities/abilities.module';
+import { RepositoriesModule } from 'src/database/repositories/repositories.module';
 
 @Module({
   imports: [
