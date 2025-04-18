@@ -10,24 +10,19 @@ import { DatabaseService } from './database/database.service';
 import { DatabaseModule } from './database/database.module';
 import { RepositoriesModule } from './database/repositories/repositories.module';
 import { CategoriesModule } from './categories/categories.module';
+import { ProductsModule } from './products/products.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    MongooseModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => ({
-        uri: configService.get('MONGODB_URI'),
-      }),
-    }),
     UsersModule,
     AbilitiesModule,
     DatabaseModule,
     RepositoriesModule,
     CategoriesModule,
+    ProductsModule,
   ],
 
   providers: [
