@@ -4,16 +4,22 @@ import { CreateProductDto, UpdateProductDto } from './dtos/product.dto';
 import { ProductsRepository } from 'src/database/repositories/products.repository';
 
 @Injectable()
-export class ProductsService implements ProductServiceInterface {
+export class ProductsService implements ProductServiceInterface, OnModuleInit {
     constructor(
         private readonly productsRepository: ProductsRepository,
-    ) {
-        this.fillCache().catch((error) => {
-            console.error('Error filling product cache:', error);
-        });
-    }
+    ) {}
 
     private productsCache: Map<number, Product> = new Map<number, Product>();
+
+    // Se invoca tras onModuleInit de todos los providers, incluido DatabaseService
+    async onModuleInit() {
+        try {
+            await this.fillCache();
+            console.log('Product cache initialized');
+        } catch (error) {
+            console.error('Error filling product cache:', error);
+        }
+    }
 
     private async fillCache() {
         const products = await this.productsRepository.findAll();
@@ -21,7 +27,6 @@ export class ProductsService implements ProductServiceInterface {
             this.productsCache.set(product.id, product);
         }
     }
-
     
     async create(product: CreateProductDto): Promise<Product> {
         const existingProduct = await this.productsRepository.findByName(product.name);

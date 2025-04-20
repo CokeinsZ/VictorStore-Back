@@ -73,8 +73,8 @@ export class UsersController {
   }
 
   @Get('email/:email')
-  @CheckPolicies({ action: Action.Read, subject: 'User' })
-  findByEmail(@Param('email') email: string, @Request() req) {
+  @Public()
+  findByEmail(@Param('email') email: string) {
 
     // 1) Quitamos comillas simples o dobles al inicio/final
     // 2) Luego lowercase, espacio y trim
@@ -84,29 +84,17 @@ export class UsersController {
       .replace(/\s+/g, '')
       .trim();
 
-    //Check user specific permission condition
-    if (req.user.role === 'user' && req.user.email != normaliced_email) {
-      // If the user is not an admin and is trying to access another user's account
-      throw new ForbiddenException('You do not have permission to access this resource');
-    }
-
     return this.usersService.findByEmail(normaliced_email);
   }
 
   @Get('nick_name/:nick_name')
-  @CheckPolicies({ action: Action.Read, subject: 'User' })
-  findByNickName(@Param('nick_name') nick_name: string, @Request() req) {
+  @Public()
+  findByNickName(@Param('nick_name') nick_name: string) {
 
     const normaliced_nick_name = nick_name
       .replace(/^['"]+|['"]+$/g, '')
       .replace(/\s+/g, '')
       .trim();
-
-    //Check user specific permission condition
-    if (req.user.role === 'user' && req.user.nick_name != normaliced_nick_name) {
-      // If the user is not an admin and is trying to access another user's account
-      throw new ForbiddenException('You do not have permission to access this resource');
-    }
 
     return this.usersService.findByNickName(normaliced_nick_name);
   }

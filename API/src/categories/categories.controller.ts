@@ -6,7 +6,7 @@ import { Category } from './interfaces/category.interface';
 import { CreateCategoryDto, UpdateCategoryDto } from './dtos/category.dto';
 import { Public } from 'src/tools/decorators/public.decorator';
 
-@Controller('categories')
+@Controller('vs/api/v1/categories')
 export class CategoriesController {
     constructor(
         private readonly categoriesService: CategoriesService,

@@ -7,7 +7,7 @@ import { Roles } from 'src/tools/decorators/roles.decorator';
 import { user_role } from 'src/users/interfaces/user.interface';
 import { OrderStatus } from './interfaces/order.interface';
 
-@Controller('orders')
+@Controller('vs/api/v1/orders')
 export class OrdersController {
     constructor(
         private readonly ordersService: OrdersService,

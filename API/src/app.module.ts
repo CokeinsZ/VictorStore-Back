@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { MongooseModule } from '@nestjs/mongoose';
 import { UsersModule } from './users/users.module';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './tools/guards/jwt-auth.guard';
@@ -12,6 +11,7 @@ import { RepositoriesModule } from './database/repositories/repositories.module'
 import { CategoriesModule } from './categories/categories.module';
 import { ProductsModule } from './products/products.module';
 import { OrdersModule } from './orders/orders.module';
+import { ReviewsModule } from './reviews/reviews.module';
 
 @Module({
   imports: [
@@ -25,6 +25,7 @@ import { OrdersModule } from './orders/orders.module';
     CategoriesModule,
     ProductsModule,
     OrdersModule,
+    ReviewsModule,
   ],
 
   providers: [

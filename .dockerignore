@@ -1,0 +1,22 @@
+# Node modules y dependencias instaladas
+dist
+node_modules
+npm-debug.log
+yarn-error.log
+test
+
+# Archivos de configuración local
+.env
+
+# Archivos y configuraciones de Docker
+Dockerfile
+docker-compose.yml
+
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db
+db
+
+# Archivos de control de versiones
+.git
+.gitignore

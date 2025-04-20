@@ -5,7 +5,7 @@ import { CheckPolicies } from 'src/tools/decorators/check-policies.decorator';
 import { Action } from 'src/tools/abilities/ability.factory';
 import { Public } from 'src/tools/decorators/public.decorator';
 
-@Controller('products')
+@Controller('vs/api/v1/products')
 export class ProductsController {
     constructor(
         private readonly productsService: ProductsService

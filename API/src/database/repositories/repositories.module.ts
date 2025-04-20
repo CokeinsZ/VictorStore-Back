@@ -6,10 +6,11 @@ import { CategoriesRepository } from './categories.repository';
 import { ProductsRepository } from './products.repository';
 import { OrdersRepository } from './orders.repository';
 import { OrderItemRepository } from './order-item.repository';
+import { ReviewsRepository } from './reviews.repository';
 
 @Module({
     imports: [DatabaseModule],
-    providers: [UsersRepository, VerificatoinCodesRepository, CategoriesRepository, ProductsRepository, OrdersRepository, OrderItemRepository],
-    exports: [UsersRepository, VerificatoinCodesRepository, CategoriesRepository, ProductsRepository, OrdersRepository, OrderItemRepository],
+    providers: [UsersRepository, VerificatoinCodesRepository, CategoriesRepository, ProductsRepository, OrdersRepository, OrderItemRepository, ReviewsRepository],
+    exports: [UsersRepository, VerificatoinCodesRepository, CategoriesRepository, ProductsRepository, OrdersRepository, OrderItemRepository, ReviewsRepository],
 })
 export class RepositoriesModule {}
