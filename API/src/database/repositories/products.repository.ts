@@ -44,9 +44,9 @@ export class ProductsRepository {
         return result[0] || null;
     }
 
-    async findByName(name: string): Promise<Product | null> {
+    async findByName(name: string): Promise<Product[] | null> {
         const query = `SELECT * FROM Products WHERE name = @Name`;
-        const result = await this.databaseService.executeQuery<Product>(query, { Name: name });
+        const result = await this.databaseService.executeQuery<Product[]>(query, { Name: name });
         return result[0] || null;
     }
 

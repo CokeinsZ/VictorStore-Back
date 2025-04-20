@@ -11,6 +11,7 @@ import { DatabaseModule } from './database/database.module';
 import { RepositoriesModule } from './database/repositories/repositories.module';
 import { CategoriesModule } from './categories/categories.module';
 import { ProductsModule } from './products/products.module';
+import { OrdersModule } from './orders/orders.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { ProductsModule } from './products/products.module';
     RepositoriesModule,
     CategoriesModule,
     ProductsModule,
+    OrdersModule,
   ],
 
   providers: [

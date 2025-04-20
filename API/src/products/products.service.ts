@@ -7,12 +7,26 @@ import { ProductsRepository } from 'src/database/repositories/products.repositor
 export class ProductsService implements ProductServiceInterface {
     constructor(
         private readonly productsRepository: ProductsRepository,
-    ) {}
+    ) {
+        this.fillCache().catch((error) => {
+            console.error('Error filling product cache:', error);
+        });
+    }
+
+    private productsCache: Map<number, Product> = new Map<number, Product>();
+
+    private async fillCache() {
+        const products = await this.productsRepository.findAll();
+        for (const product of products) {
+            this.productsCache.set(product.id, product);
+        }
+    }
+
     
     async create(product: CreateProductDto): Promise<Product> {
         const existingProduct = await this.productsRepository.findByName(product.name);
-        if (existingProduct) {
-            throw new ConflictException(`Product with name ${existingProduct.name} already exists`);
+        if (existingProduct && existingProduct.length > 0) {
+            throw new ConflictException(`Product with name ${product.name} already exists`);
         }
 
         const normaliced_product = {
@@ -27,6 +41,8 @@ export class ProductsService implements ProductServiceInterface {
             throw new InternalServerErrorException('Product creation failed');
         }
 
+        this.productsCache.set(createdProduct.id, createdProduct); // Cache the created product
+
         return createdProduct;
     }
 
@@ -35,6 +51,11 @@ export class ProductsService implements ProductServiceInterface {
     }
 
     async findById(id: number): Promise<Product> {
+        const cached_product = this.productsCache.get(id);
+        if (cached_product) {
+            return cached_product;
+        }
+
         const product = await this.productsRepository.findById(id);
         if (!product) {
             throw new NotFoundException(`Product with id ${id} not found`);
@@ -42,10 +63,10 @@ export class ProductsService implements ProductServiceInterface {
         return product;
     }
 
-    async findByName(name: string): Promise<Product> {
+    async findByName(name: string): Promise<Product[]> {
         const product = await this.productsRepository.findByName(name);
         if (!product) {
-            throw new NotFoundException(`Product with name ${name} not found`);
+            throw new NotFoundException(`Products with name ${name} not found`);
         }
         return product;
     }
@@ -114,7 +135,7 @@ export class ProductsService implements ProductServiceInterface {
 
         if (product.name) {
             const productWithSameName = await this.productsRepository.findByName(product.name);
-            if (productWithSameName && productWithSameName.id !== id) {
+            if (productWithSameName && productWithSameName.length > 0 && !productWithSameName.find(p => p.id === id)) {
                 throw new ConflictException(`Product with name ${product.name} already exists`);
             }
         }
@@ -131,12 +152,17 @@ export class ProductsService implements ProductServiceInterface {
             throw new InternalServerErrorException('Product update failed');
         }
 
+        this.productsCache.set(updatedProduct.id, updatedProduct); // Update the cache
+
         return updatedProduct;
     }
 
     delete(id: number): Promise<void> {
+        const cached_product = this.productsCache.get(id);
+        if (cached_product) {
+            this.productsCache.delete(id); // Remove from cache
+        }
         return this.productsRepository.delete(id);
     }
-
     
 }

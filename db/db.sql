@@ -90,15 +90,13 @@ GO
 CREATE TABLE Orders (
     id INT IDENTITY(1,1) PRIMARY KEY,
     user_id INT NULL,
-    total MONEY NOT NULL,
-    status VARCHAR(20) DEFAULT 'not processed',
+    total MONEY NOT NULL DEFAULT 0,
     created_at DATETIME2 DEFAULT GETDATE(),
     updated_at DATETIME2 DEFAULT GETDATE(),
     CONSTRAINT FK_Orders_Users FOREIGN KEY (user_id)
         REFERENCES Users(id)
         ON DELETE SET NULL
         ON UPDATE CASCADE,
-    CONSTRAINT CHK_Orders_Status CHECK (status IN ('not processed', 'pending', 'shipped', 'delivered', 'cancelled'))
 );
 GO
 
@@ -107,6 +105,9 @@ CREATE TABLE Order_Items (
     order_id INT NOT NULL,
     product_id INT NOT NULL,
     quantity SMALLINT NOT NULL,
+    status VARCHAR(20) DEFAULT 'not processed',
+    created_at DATETIME2 DEFAULT GETDATE(),
+    updated_at DATETIME2 DEFAULT GETDATE(),
     PRIMARY KEY (order_id, product_id),
     CONSTRAINT FK_OrderItems_Orders FOREIGN KEY (order_id)
         REFERENCES Orders(id)
@@ -114,8 +115,10 @@ CREATE TABLE Order_Items (
         ON UPDATE CASCADE,
     CONSTRAINT FK_OrderItems_Products FOREIGN KEY (product_id)
         REFERENCES Products(id)
-        ON DELETE NO ACTION    -- La acción RESTRICT en PostgreSQL se puede simular con NO ACTION
-        ON UPDATE CASCADE
+        ON DELETE NO ACTION   
+        ON UPDATE CASCADE,
+    CONSTRAINT CHK_Orders_Status CHECK (status IN ('not processed', 'pending', 'shipped', 'delivered', 'returned', 'refunded', 'cancelled'))
+
 );
 GO
 

@@ -18,7 +18,7 @@ export interface ProductServiceInterface {
 
     findAll(): Promise<Product[]>;
     findById(id: number): Promise<Product>;
-    findByName(name: string): Promise<Product>;
+    findByName(name: string): Promise<Product[]>;
     findByCategoryId(categoryId: number): Promise<Product[]>;
     findByMainCategoryId(mainCategoryId: number): Promise<Product[]>;
 
