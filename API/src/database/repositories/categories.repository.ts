@@ -15,7 +15,7 @@ export class CategoriesRepository {
     }
 
     async findAll(): Promise<Category[]> {
-        return await this.databaseService.executeQuery<Category>(`SELECT * FROM Categories`);;
+        return await this.databaseService.executeQuery<Category>(`SELECT * FROM Categories`);
     }
 
     async findById(id: number): Promise<Category | null> {
@@ -24,6 +24,19 @@ export class CategoriesRepository {
             { Id: id },
         );
         return result[0] || null;
+    }
+
+    async findByIdsArray(ids: number[]): Promise<Category[]> {
+        if (ids.length === 0) return [];
+        const params = (`` + ids.map((id) => `@Id${id}`).join(', '));
+        const values = {};
+        ids.forEach((id) => {
+            values[`Id${id}`] = id;
+        });
+
+        const query = `SELECT * FROM Categories WHERE id IN (${params})`;
+        const result = await this.databaseService.executeQuery<Category>(query, values);
+        return result || null;
     }
 
     async findByName(name: string): Promise<Category | null> {

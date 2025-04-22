@@ -102,10 +102,6 @@ import { user_role, user_status } from '../interfaces/user.interface';
     @IsNotEmpty()
     @IsString()
     code: string;
-
-    @IsNotEmpty()
-    @IsString()
-    currentPassword: string;
   
     @IsNotEmpty()
     @IsString()

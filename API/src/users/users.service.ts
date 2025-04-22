@@ -105,9 +105,9 @@ export class UsersService implements UserServiceInterface {
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    const isPasswordValid = await bcrypt.compare(changePasswordDto.currentPassword, user.password);
-    if (!isPasswordValid) {
-      throw new UnauthorizedException('Current password is incorrect');
+
+    if (user.status !== user_status.ACTIVE) {
+      throw new UnauthorizedException('User is not active, please contact support');
     }
 
     const hashedPassword = await bcrypt.hash(changePasswordDto.newPassword, 10);
@@ -145,12 +145,38 @@ export class UsersService implements UserServiceInterface {
     if (new Date() > dbCode.expires_at) {
       throw new UnauthorizedException('Verification code expired, please request a new one');
     }
-    const user = await this.userRepository.updateUserStatus(verifyEmailDto.id, 'active');
+
+    await this.userRepository.updateUserStatus(verifyEmailDto.id, 'active');
+    await this.userRepository.resetFailedAttempts(verifyEmailDto.id);
+    
+
+    await this.verificationCodeRepository.erase(verifyEmailDto.id);
+    return { message: 'Email verified successfully' };
+  }
+
+  async resendVerificationCode(email: string): Promise<{ message: string; }> {
+    const user = await this.userRepository.findByEmail(email);
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    await this.verificationCodeRepository.erase(verifyEmailDto.id);
-    return { message: 'Email verified successfully' };
+
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const dbCode = await this.verificationCodeRepository.find(user.id);
+    if (dbCode) {
+      await this.verificationCodeRepository.update(user.id, verificationCode);
+    }
+    else {
+      await this.verificationCodeRepository.create(user.id, verificationCode);
+    }
+
+    // Send verification email
+    await this.emailService.sendVerificationEmail(
+      user.email,
+      user.nick_name,
+      verificationCode,
+    );
+
+    return { message: 'Verification code resent successfully' };
   }
 
   async login(loginDto: LoginDto): Promise<{ message: string; userId: string; email: string; role: string; nick_name: string; token: string; }> {
@@ -171,8 +197,15 @@ export class UsersService implements UserServiceInterface {
       throw new UnauthorizedException('User is not active, please contact support');
     }
 
+    const failedLoginAttempts = user.failed_login_attempts;
+    if (failedLoginAttempts >= 3) {
+      this.userRepository.updateUserStatus(user.id, user_status.NOT_VERIFIED);
+      throw new UnauthorizedException('Account locked due to too many failed login attempts, please contact support');
+    }
+
     const isPasswordValid = await bcrypt.compare(loginDto.password, user.password);
     if (!isPasswordValid) {
+      this.userRepository.updateFailedAttempts(user.id, failedLoginAttempts + 1);
       throw new UnauthorizedException('Invalid password');
     }
     const payload = { sub: user.id, email: user.email, role: user.role, nick_name: user.nick_name };

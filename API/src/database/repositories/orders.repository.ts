@@ -15,12 +15,12 @@ export class OrdersRepository {
 
     async findAll(): Promise<Order[]> {
         const query = `SELECT * FROM Orders`;
-        return await this.databaseService.executeQuery<Order[]>(query)[0];
+        return await this.databaseService.executeQuery<Order>(query);
     }
 
     async findById(id: number): Promise<Order | null> {
         const query = `
-            SELECT O.*, U.id, U.nick_name, U.email FROM Orders AS O
+            SELECT O.*, U.id AS userId, U.nick_name, U.email FROM Orders AS O
             INNER JOIN Users AS U ON O.user_id = U.id
             WHERE O.id = @Id            
         `;
@@ -30,13 +30,13 @@ export class OrdersRepository {
 
     async findByUserId(userId: number): Promise<Order[]> {
         const query = `SELECT * FROM Orders WHERE user_id = @UserId`;
-        return await this.databaseService.executeQuery<Order>(query, { UserId: userId })[0];
+        return await this.databaseService.executeQuery<Order>(query, { UserId: userId });
     }
 
     async findProductOrders(product_id: number): Promise<Order[]> {
         const query = `
             SELECT O.* FROM Orders AS O 
-            INNER JOIN Order_Item AS OI ON O.id = OI.order_id
+            INNER JOIN Order_Items AS OI ON O.id = OI.order_id
             INNER JOIN Products AS P ON OI.product_id = P.id
             WHERE P.id = @ProductId
         `;

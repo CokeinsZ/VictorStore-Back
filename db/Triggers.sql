@@ -21,7 +21,7 @@ AFTER DELETE
 AS
 BEGIN
     -- Eliminar las filas relacionadas en OrderItems
-    DELETE FROM OrderItems
+    DELETE FROM Order_Items
     WHERE order_id IN (SELECT id FROM DELETED);
     
     -- Mensaje para confirmar la operación (en un entorno de desarrollo)
@@ -41,6 +41,10 @@ BEGIN
 
     -- Eliminar las filas relacionadas en Reviews
     DELETE FROM Reviews
+    WHERE product_id IN (SELECT id FROM DELETED);
+
+    -- Eliminar las filas relacionadas en Product_Category
+    DELETE FROM Product_Category
     WHERE product_id IN (SELECT id FROM DELETED);
     
     -- Mensaje para confirmar la operación (en un entorno de desarrollo)

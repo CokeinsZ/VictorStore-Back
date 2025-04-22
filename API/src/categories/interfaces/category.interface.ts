@@ -5,6 +5,11 @@ export interface Category {
     name: string;
 }
 
+export interface ProductCategory {
+    product_id: number;
+    category_id: number;
+}
+
 export interface CategoryServiceInterface {
     create(category: CreateCategoryDto): Promise<Category>;
     findAll(): Promise<Category[]>;

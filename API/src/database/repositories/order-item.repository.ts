@@ -7,6 +7,7 @@ export class OrderItemRepository {
     constructor(private readonly databaseService: DatabaseService) { }
 
     async create(orderId: number, items: OrderItem[]): Promise<OrderItem[]> {
+        console.log('Creating order items:', items);//DEBUG
         let params = ``
         let values = {}
         for (const item of items) {
@@ -18,30 +19,30 @@ export class OrderItemRepository {
         values['OrderId'] = orderId
 
         const query = `
-            INSERT INTO Order_Item (order_id, product_id, quantity)
+            INSERT INTO Order_Items (order_id, product_id, quantity)
             OUTPUT INSERTED.*
             VALUES ${params}
         `;
-        const result = await this.databaseService.executeQuery<OrderItem[]>(query, values);
-        return result[0];
+
+        return await this.databaseService.executeQuery<OrderItem>(query, values);
     }
 
     async findByOrderId(orderId: number): Promise<OrderItem[]> {
-        const query = `SELECT * FROM Order_Item WHERE order_id = @OrderId`;
+        const query = `SELECT * FROM Order_Items WHERE order_id = @OrderId`;
         return await this.databaseService.executeQuery<OrderItem>(query, { OrderId: orderId });
     }
 
     async findByOrderItemStatus(order_id: number, status: string): Promise<OrderItem[]> {
-        const query = `SELECT * FROM Order_Item WHERE order_id = @OrderId AND status = @Status`;
+        const query = `SELECT * FROM Order_Items WHERE order_id = @OrderId AND status = @Status`;
         return await this.databaseService.executeQuery<OrderItem>(query, { OrderId: order_id, Status: status });
     }
 
     async updateOrderItems(orderId: number, items: OrderItem[]): Promise<OrderItem[]> {
         const query = `
-            DELETE FROM Order_Item WHERE order_id = @OrderId;
-            INSERT INTO Order_Item (order_id, product_id, quantity)
+            DELETE FROM Order_Items WHERE order_id = @OrderId;
+            INSERT INTO Order_Items (order_id, product_id, quantity)
             OUTPUT INSERTED.*
-            VALUES ${items.map((item, index) => `(@OrderId, @ProductId${index}, @Quantity${index})`).join(', ').slice(0, -2)}
+            VALUES ${items.map((item, index) => `(@OrderId, @ProductId${index}, @Quantity${index})`).join(', ')}
         `;
 
         const values = items.reduce((acc, item, index) => {
@@ -50,16 +51,13 @@ export class OrderItemRepository {
             return acc;
         }, { OrderId: orderId });
 
-        console.log('Query:', query);//DEBUG
-        console.log('Values:', values);//DEBUG
-
-        const result = await this.databaseService.executeQuery<OrderItem[]>(query, values);
-        return result[0];
+        const result = await this.databaseService.executeQuery<OrderItem>(query, values);
+        return result;
     }
 
     async updateOrderItemStatus(orderId: number, product_id: number, status: string): Promise<OrderItem> {
         const query = `
-            UPDATE Order_Item
+            UPDATE Order_Items
             SET status = @Status
             OUTPUT INSERTED.*
             WHERE order_id = @OrderId AND product_id = @ProductId

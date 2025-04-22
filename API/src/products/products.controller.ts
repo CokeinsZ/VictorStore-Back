@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
 import { ProductsService } from './products.service';
-import { CreateProductDto } from './dtos/product.dto';
+import { CreateProductDto, UpdateProductDto } from './dtos/product.dto';
 import { CheckPolicies } from 'src/tools/decorators/check-policies.decorator';
 import { Action } from 'src/tools/abilities/ability.factory';
 import { Public } from 'src/tools/decorators/public.decorator';
@@ -32,7 +32,10 @@ export class ProductsController {
     @Get('name/:name')
     @Public()
     async getProductByName(@Param('name') name: string): Promise<any> {
-        return await this.productsService.findByName(name);
+        const normaliced_name = name
+            .replace(/^['"]+|['"]+$/g, '')
+            .trim();
+        return await this.productsService.findByName(normaliced_name);
     }
 
     @Get('category/:categoryId')
@@ -79,7 +82,7 @@ export class ProductsController {
 
     @Patch(':id')
     @CheckPolicies({ action: Action.Update, subject: 'Product' })
-    async updateProduct(@Param('id') id: number, @Body() product: CreateProductDto): Promise<any> {
+    async updateProduct(@Param('id') id: number, @Body() product: UpdateProductDto): Promise<any> {
         return await this.productsService.update(id, product);
     }
 

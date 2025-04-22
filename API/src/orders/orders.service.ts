@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Order, OrderItem, OrdersServiceInterface, OrderStatus } from './interfaces/order.interface';
 import { CreateOrderDto, UpdateOrderDto } from './dtos/order.dto';
 import { OrdersRepository } from 'src/database/repositories/orders.repository';
@@ -23,7 +23,7 @@ export class OrdersService implements OrdersServiceInterface {
         for (const item of orderItems) {
             const product = await this.productsService.findById(item.product_id);
             if (!product) {
-                throw new Error(`Product with ID ${item.product_id} not found.`);
+                throw new NotFoundException(`Product with ID ${item.product_id} not found.`);
             }
             total += product.price * item.quantity;
         }
@@ -32,7 +32,7 @@ export class OrdersService implements OrdersServiceInterface {
         const order = await this.ordersRepository.findById(orderId); // Fetch the order again to include the total and the user details
 
         if (!order) {
-            throw new Error(`A problem occurred while creating the order.`);
+            throw new BadRequestException(`A problem occurred while creating the order.`);
         }
 
         return {
@@ -48,12 +48,12 @@ export class OrdersService implements OrdersServiceInterface {
     async findOrderById(id: number): Promise<Order> {
         const order = await this.ordersRepository.findById(id);
         if (!order) {
-            throw new Error(`Order with ID ${id} not found.`);
+            throw new NotFoundException(`Order with ID ${id} not found.`);
         }
         const orderItems = await this.orderItemRepository.findByOrderId(id);
 
         if (!orderItems) {
-            throw new Error(`Order items for order ID ${id} not found.`);
+            throw new NotFoundException(`Order items for order ID ${id} not found.`);
         }
 
         return {
@@ -65,13 +65,13 @@ export class OrdersService implements OrdersServiceInterface {
     async findOrdersByUserId(userId: number): Promise<Order[]> {
         const orders = await this.ordersRepository.findByUserId(userId);
         if (!orders) {
-            throw new Error(`Orders for user ID ${userId} not found.`);
+            throw new NotFoundException(`Orders for user ID ${userId} not found.`);
         }
 
         for (const order of orders) {
             const orderItems = await this.orderItemRepository.findByOrderId(order.id);
             if (!orderItems) {
-                throw new Error(`Order items for order ID ${order.id} not found.`);
+                throw new NotFoundException(`Order items for order ID ${order.id} not found.`);
             }
             order.items = orderItems;
         }
@@ -81,7 +81,7 @@ export class OrdersService implements OrdersServiceInterface {
     async findOrderItemsByStatus(order_id: number, status: OrderStatus): Promise<OrderItem[]> {
         const items = await this.orderItemRepository.findByOrderItemStatus(order_id, status);
         if (!items) {
-            throw new Error(`Items with status ${status} not found for this order.`);
+            throw new NotFoundException(`Items with status ${status} not found for this order.`);
         }
 
         return items;
@@ -92,13 +92,18 @@ export class OrdersService implements OrdersServiceInterface {
     }
 
     async updateOrder(id: number, dto: UpdateOrderDto): Promise<Order> {
+        const order = await this.findOrderById(id);
+        if (!order) {
+            throw new NotFoundException('Order not found');
+        }
+
         await this.orderItemRepository.updateOrderItems(id, dto.items as OrderItem[]);
 
         let total = 0;
         for (const item of dto.items as OrderItem[]) {
             const product = await this.productsService.findById(item.product_id);
             if (!product) {
-                throw new Error(`Product with ID ${item.product_id} not found.`);
+                throw new NotFoundException(`Product with ID ${item.product_id} not found.`);
             }
             total += product.price * item.quantity;
         }
@@ -106,7 +111,7 @@ export class OrdersService implements OrdersServiceInterface {
 
         const result = await this.ordersRepository.findById(id);
         if (!result) {
-            throw new Error(`Order with ID ${id} not found.`);
+            throw new NotFoundException(`Order with ID ${id} not found.`);
         }
         
         return {

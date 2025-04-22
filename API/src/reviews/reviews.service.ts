@@ -1,4 +1,4 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
 import { ReviewsRepository } from 'src/database/repositories/reviews.repository';import { Review } from './interfaces/review.interface';
 import { CreateReviewDto } from './dtos/review.dto';
 
@@ -15,7 +15,7 @@ export class ReviewsService {
         }
 
         if (dto.rating < 1 || dto.rating > 5) {
-            throw new Error('Rating must be between 1 and 5.');
+            throw new BadRequestException('Rating must be between 1 and 5.');
         }
 
         const review = await this.reviewsRepository.createReview(dto);

@@ -12,11 +12,11 @@ export enum OrderStatus {
 
 export interface Order {
     id: number;
-    user: {
-        id: number;
-        nick_name: string;
-        email: string;
-    };
+
+    user_id: number;
+    nick_name: string;
+    email: string;
+    
     total?: number;
 
     items?: OrderItem[];

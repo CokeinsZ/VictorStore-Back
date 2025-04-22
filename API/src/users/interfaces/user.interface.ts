@@ -31,6 +31,7 @@ export interface User {
   email: string;
   password: string;
   status: user_status;
+  failed_login_attempts: number;
 }
 
 export interface UserServiceInterface {

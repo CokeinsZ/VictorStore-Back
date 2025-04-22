@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, ForbiddenException, Get, Param, Post, Put, Request } from '@nestjs/common';
+import { Body, Controller, Delete, ForbiddenException, Get, NotFoundException, Param, Patch, Post, Put, Request } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { CheckPolicies } from 'src/tools/decorators/check-policies.decorator';
 import { Action } from 'src/tools/abilities/ability.factory';
@@ -29,8 +29,9 @@ export class OrdersController {
     @CheckPolicies({ action: Action.Read, subject: 'Order' })
     async findOrderById(@Param('id') id: number, @Request() req) {
         const order = await this.ordersService.findOrderById(id);
+        console.log('Order:', order);//DEBUG
 
-        if (req.user.role === user_role.USER && req.user.id !== order.user.id) {
+        if (req.user.role === user_role.USER && req.user.id != order.user_id) {
             // If the user is not an admin and is trying to access another user's orders
             throw new ForbiddenException('You do not have permission to access this resource');
         }
@@ -41,7 +42,7 @@ export class OrdersController {
     @Get('user/:id')
     @CheckPolicies({ action: Action.Read, subject: 'Order' })
     async findOrdersByUserId(@Param('id') id: number, @Request() req) {
-        if (req.user.role === user_role.USER && req.user.id !== id) {
+        if (req.user.role === user_role.USER && req.user.id != id) {
             // If the user is not an admin and is trying to access another user's orders
             throw new ForbiddenException('You do not have permission to access this resource');
         }
@@ -50,8 +51,14 @@ export class OrdersController {
 
     @Get(':id/status/:status')
     @Roles(user_role.ADMIN, user_role.EDITOR)
-    async findOrdersByStatus(@Param('id') id: number, @Param('status') status: OrderStatus) {
-        return await this.ordersService.findOrderItemsByStatus(id, status);
+    async findOrderItemsByStatus(@Param('id') id: number, @Param('status') status: OrderStatus) {
+        const normaliced_status = status
+            .replace(/^['"]+|['"]+$/g, '')
+            .toLowerCase()
+            .replace(/\s+/g, '')
+            .trim();
+
+        return await this.ordersService.findOrderItemsByStatus(id, normaliced_status as OrderStatus);
     }
 
     @Get('product/:productId')
@@ -63,15 +70,10 @@ export class OrdersController {
     @Put(':id')
     @CheckPolicies({ action: Action.Update, subject: 'Order' })
     async updateOrder(@Param('id') id: number, @Body() dto: UpdateOrderDto) {
-        const order = await this.ordersService.findOrderById(id);
-        if (!order) {
-            throw new ForbiddenException('Order not found');
-        }
-
         return await this.ordersService.updateOrder(id, dto);
     }
 
-    @Put('orderItem/status')
+    @Patch('orderItem/status')
     @CheckPolicies({ action: Action.Update, subject: 'Order.status' })
     async updateOrderItemStatus(@Body() dto: UpdateOrderItemStatusDto) {
         return await this.ordersService.updateOrderItemStatus(dto.order_id, dto.product_id, dto.status);
@@ -82,7 +84,7 @@ export class OrdersController {
     async deleteOrder(@Param('id') id: number, @Request() req) {
         const order = await this.ordersService.findOrderById(id);
         if (req.user.role === user_role.USER) {
-            if (req.user.id !== order.user.id) {
+            if (req.user.id !== order.user_id) {
                 // If the user is not an admin and is trying to access another user's orders
                 throw new ForbiddenException('You do not have permission to access this resource');
             }

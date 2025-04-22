@@ -42,9 +42,13 @@ CREATE TABLE Product_Category (
     category_id INT NOT NULL,
     PRIMARY KEY (product_id, category_id),
     CONSTRAINT FK_Product_Category_Product FOREIGN KEY (product_id)
-        REFERENCES Products(id),
+        REFERENCES Products(id)
+        ON DELETE NO ACTION
+        ON UPDATE NO ACTION,
     CONSTRAINT FK_Product_Category_Category FOREIGN KEY (category_id)
         REFERENCES Categories(id)
+        ON DELETE NO ACTION
+        ON UPDATE NO ACTION
 );
 GO
 
@@ -59,6 +63,7 @@ CREATE TABLE Users (
     email VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
     status VARCHAR(20) DEFAULT 'not_verified',
+    failed_login_attempts SMALLINT DEFAULT 0 NULL,
 
     CONSTRAINT CHK_Users_Role CHECK (role IN ('admin', 'editor', 'user')),
     CONSTRAINT CHK_Users_Status CHECK (status IN ('not_verified', 'active', 'inactive', 'banned'))
@@ -105,7 +110,7 @@ CREATE TABLE Order_Items (
     order_id INT NOT NULL,
     product_id INT NOT NULL,
     quantity SMALLINT NOT NULL,
-    status VARCHAR(20) DEFAULT 'not processed',
+    status VARCHAR(20) DEFAULT 'not_processed',
     created_at DATETIME2 DEFAULT GETDATE(),
     updated_at DATETIME2 DEFAULT GETDATE(),
     PRIMARY KEY (order_id, product_id),
@@ -117,7 +122,7 @@ CREATE TABLE Order_Items (
         REFERENCES Products(id)
         ON DELETE NO ACTION   
         ON UPDATE CASCADE,
-    CONSTRAINT CHK_Orders_Status CHECK (status IN ('not processed', 'pending', 'shipped', 'delivered', 'returned', 'refunded', 'cancelled'))
+    CONSTRAINT CHK_Orders_Status CHECK (status IN ('not_processed', 'pending', 'shipped', 'delivered', 'returned', 'refunded', 'cancelled'))
 
 );
 GO

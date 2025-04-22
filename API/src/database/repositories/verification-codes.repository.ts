@@ -16,6 +16,11 @@ export class VerificatoinCodesRepository {
     return result[0] || null;
   }
 
+  async update(userId: number, code: string): Promise<void> {
+    const query = `UPDATE Verification_Codes SET code = @Code WHERE user_id = @UserId`;
+    await this.databaseService.executeQuery(query, { UserId: userId, Code: code });
+  }
+
   async erase(userId: number): Promise<void> {
     const query = `DELETE FROM Verification_Codes WHERE user_id = @UserId`;
     await this.databaseService.executeQuery(query, { UserId: userId });

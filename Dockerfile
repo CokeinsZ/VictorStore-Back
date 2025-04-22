@@ -20,8 +20,5 @@ RUN chmod +x ./start.sh
 # Exponer puertos necesarios
 EXPOSE 80 443
 
-RUN cd /app/dist 
-RUN ls
-
 # Comando de inicio
 CMD ["./start.sh"]

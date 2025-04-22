@@ -1,3 +1,4 @@
+import { Category } from "src/categories/interfaces/category.interface";
 import { CreateProductDto, UpdateProductDto } from "../dtos/product.dto";
 
 export interface Product {
@@ -9,8 +10,9 @@ export interface Product {
     rating: number;
     features: Record<string, any> | string | null;
     specifications: Record<string, any> | string | null;
-    images: string[] | null;
+    images: string[] | string | null;
     main_category_id: number | null;
+    categories?: Category[] | null;
 }
 
 export interface ProductServiceInterface {

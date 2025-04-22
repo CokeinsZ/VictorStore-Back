@@ -1,5 +1,5 @@
 import { Type } from "class-transformer";
-import { IsArray, IsNotEmpty, IsNumber, ValidateNested } from "class-validator";
+import { IsArray, IsEnum, IsNotEmpty, IsNumber, ValidateNested } from "class-validator";
 import { Order, OrderStatus } from "../interfaces/order.interface";
 
 export class OrderItemDto {
@@ -26,10 +26,6 @@ export class CreateOrderDto {
 
 export class UpdateOrderDto {
     @IsNotEmpty()
-    @IsNumber()
-    order_id: number;
-
-    @IsNotEmpty()
     @ValidateNested({ each: true })
     @Type(() => OrderItemDto)
     @IsArray()
@@ -46,5 +42,6 @@ export class UpdateOrderItemStatusDto {
     product_id: number;
 
     @IsNotEmpty()
+    @IsEnum(OrderStatus)
     status: OrderStatus;
 }

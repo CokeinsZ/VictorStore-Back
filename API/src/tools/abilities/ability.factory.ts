@@ -77,6 +77,11 @@ export class AbilityFactory {
     });
 
     rules.push({
+      action: Action.Manage,
+      subject: 'Order.status',
+    });
+
+    rules.push({
       action: Action.Read,
       subject: 'all',
     });

@@ -24,12 +24,12 @@ export class ReviewsRepository {
 
     async getReviewsByProductId(product_id: number): Promise<Review[]> {
         const query = `SELECT * FROM Reviews WHERE product_id = @ProductId`;
-        return this.db.executeQuery<Review[]>(query, { ProductId: product_id })[0];
+        return this.db.executeQuery<Review>(query, { ProductId: product_id });
     }
 
     async getReviewsByUserId(user_id: number): Promise<Review[]> {
         const query = `SELECT * FROM Reviews WHERE user_id = @UserId`;
-        return this.db.executeQuery<Review[]>(query, { UserId: user_id })[0];
+        return this.db.executeQuery<Review>(query, { UserId: user_id });
     }
 
     async updateProductRating(product_id: number, rating: number): Promise<void> {

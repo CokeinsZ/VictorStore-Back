@@ -1,12 +1,16 @@
-import { ConflictException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, InternalServerErrorException, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { Product, ProductServiceInterface } from './interfaces/product.interface';
 import { CreateProductDto, UpdateProductDto } from './dtos/product.dto';
 import { ProductsRepository } from 'src/database/repositories/products.repository';
+import { ProductCategoriesRepository } from 'src/database/repositories/product-category.repository';
+import { CategoriesRepository } from 'src/database/repositories/categories.repository';
 
 @Injectable()
 export class ProductsService implements ProductServiceInterface, OnModuleInit {
     constructor(
         private readonly productsRepository: ProductsRepository,
+        private readonly categoriesRepository: CategoriesRepository,
+        private readonly productCategoriesRepository: ProductCategoriesRepository,
     ) {}
 
     private productsCache: Map<number, Product> = new Map<number, Product>();
@@ -34,11 +38,19 @@ export class ProductsService implements ProductServiceInterface, OnModuleInit {
             throw new ConflictException(`Product with name ${product.name} already exists`);
         }
 
+        if (product.categories && product.categories.length > 0) {
+            const categories = await this.categoriesRepository.findByIdsArray([...product.categories, product.main_category_id]);
+            if (categories.length !== product.categories.length + 1) {
+                throw new NotFoundException(`Some categories not found`);
+            }
+        }
+
         const normaliced_product = {
             ...product,
             features: product.features? JSON.stringify(product.features) : null,
             specifications: product.specifications? JSON.stringify(product.specifications) : null,
-            images: product.images || null,
+            images: product.images ? JSON.stringify(product.images) : null,  // <— stringificar aquí
+            categories: null
         };
 
         const createdProduct = await this.productsRepository.create(normaliced_product);
@@ -48,11 +60,23 @@ export class ProductsService implements ProductServiceInterface, OnModuleInit {
 
         this.productsCache.set(createdProduct.id, createdProduct); // Cache the created product
 
+        // Associate categories if provided
+        if (product.categories && product.categories.length > 0) {
+            await this.productCategoriesRepository.asociateProductCategories(createdProduct.id, product.categories);
+        }
+
         return createdProduct;
     }
 
     async findAll(): Promise<Product[]> {
-        return await this.productsRepository.findAll();
+        const products = await this.productsRepository.findAll();
+        const updatedProducts = await Promise.all(products.map(async product => {
+            product.categories = await this.productCategoriesRepository.findByProductId(product.id);
+            this.productsCache.set(product.id, product); // Cache each product
+            return product;
+        }));
+
+        return updatedProducts;
     }
 
     async findById(id: number): Promise<Product> {
@@ -65,15 +89,23 @@ export class ProductsService implements ProductServiceInterface, OnModuleInit {
         if (!product) {
             throw new NotFoundException(`Product with id ${id} not found`);
         }
+
+        product.categories = await this.productCategoriesRepository.findByProductId(product.id);
+        this.productsCache.set(product.id, product); // Cache the product
         return product;
     }
 
     async findByName(name: string): Promise<Product[]> {
-        const product = await this.productsRepository.findByName(name);
-        if (!product) {
+        const products = await this.productsRepository.findByName(name);
+        if (!products || products.length === 0) {
             throw new NotFoundException(`Products with name ${name} not found`);
         }
-        return product;
+        const updatedProducts = await Promise.all(products.map(async product => {
+            product.categories = await this.productCategoriesRepository.findByProductId(product.id);
+            return product;
+        }));
+
+        return updatedProducts;
     }
 
     async findByCategoryId(categoryId: number): Promise<Product[]> {
@@ -81,7 +113,11 @@ export class ProductsService implements ProductServiceInterface, OnModuleInit {
         if (!products || products.length === 0) {
             throw new NotFoundException(`No products found for category id ${categoryId}`);
         }
-        return products;
+        const updatedProducts = await Promise.all(products.map(async product => {
+            product.categories = await this.productCategoriesRepository.findByProductId(product.id);
+            return product;
+        }));
+        return updatedProducts;
     }
 
     async findByMainCategoryId(mainCategoryId: number): Promise<Product[]> {
@@ -89,7 +125,11 @@ export class ProductsService implements ProductServiceInterface, OnModuleInit {
         if (!products || products.length === 0) {
             throw new NotFoundException(`No products found for main category id ${mainCategoryId}`);
         }
-        return products;
+        const updatedProducts = await Promise.all(products.map(async product => {
+            product.categories = await this.productCategoriesRepository.findByProductId(product.id);
+            return product;
+        }));
+        return updatedProducts;
     }
 
     async filterByPriceRange(min: number, max: number): Promise<Product[]> {
@@ -97,7 +137,11 @@ export class ProductsService implements ProductServiceInterface, OnModuleInit {
         if (!products || products.length === 0) {
             throw new NotFoundException(`No products found in the price range ${min} - ${max}`);
         }
-        return products;
+        const updatedProducts = await Promise.all(products.map(async product => {
+            product.categories = await this.productCategoriesRepository.findByProductId(product.id);
+            return product;
+        }));
+        return updatedProducts;
     }
 
     async OrderByPriceAsc(): Promise<Product[]> {
@@ -105,7 +149,11 @@ export class ProductsService implements ProductServiceInterface, OnModuleInit {
         if (!products || products.length === 0) {
             throw new NotFoundException(`No products found`);
         }
-        return products;
+        const updatedProducts = await Promise.all(products.map(async product => {
+            product.categories = await this.productCategoriesRepository.findByProductId(product.id);
+            return product;
+        }));
+        return updatedProducts;
     }
 
     async OrderByPriceDesc(): Promise<Product[]> {
@@ -113,7 +161,11 @@ export class ProductsService implements ProductServiceInterface, OnModuleInit {
         if (!products || products.length === 0) {
             throw new NotFoundException(`No products found`);
         }
-        return products;
+        const updatedProducts = await Promise.all(products.map(async product => {
+            product.categories = await this.productCategoriesRepository.findByProductId(product.id);
+            return product;
+        }));
+        return updatedProducts;
     }
 
     async filterByRating(min: number, max: number): Promise<Product[]> {
@@ -121,7 +173,11 @@ export class ProductsService implements ProductServiceInterface, OnModuleInit {
         if (!products || products.length === 0) {
             throw new NotFoundException(`No products found in the rating range ${min} - ${max}`);
         }
-        return products;
+        const updatedProducts = await Promise.all(products.map(async product => {
+            product.categories = await this.productCategoriesRepository.findByProductId(product.id);
+            return product;
+        }));
+        return updatedProducts;
     }
 
     async filterByDiscount(min: number, max: number): Promise<Product[]> {
@@ -129,7 +185,11 @@ export class ProductsService implements ProductServiceInterface, OnModuleInit {
         if (!products || products.length === 0) {
             throw new NotFoundException(`No products found in the discount range ${min} - ${max}`);
         }
-        return products;
+        const updatedProducts = await Promise.all(products.map(async product => {
+            product.categories = await this.productCategoriesRepository.findByProductId(product.id);
+            return product;
+        }));
+        return updatedProducts;
     }
 
     async update(id: number, product: UpdateProductDto): Promise<Product> {
@@ -149,7 +209,8 @@ export class ProductsService implements ProductServiceInterface, OnModuleInit {
             ...product,
             features: product.features? JSON.stringify(product.features) : null,
             specifications: product.specifications? JSON.stringify(product.specifications) : null,
-            images: product.images || null,
+            images: product.images ? JSON.stringify(product.images) : null,  // <— stringificar aquí
+            categories: null
         };
 
         const updatedProduct = await this.productsRepository.update(id, normaliced_product);
@@ -157,6 +218,10 @@ export class ProductsService implements ProductServiceInterface, OnModuleInit {
             throw new InternalServerErrorException('Product update failed');
         }
 
+        // Update categories if provided
+        if (product.categories && product.categories.length > 0) {
+            await this.productCategoriesRepository.update(id, product.categories);
+        }
         this.productsCache.set(updatedProduct.id, updatedProduct); // Update the cache
 
         return updatedProduct;

@@ -13,6 +13,7 @@ export class ProductsRepository {
         for (const key in product) {
             if (!product[key]) {
                 delete product[key];
+                continue;
             }
 
             if (key === 'id') {}; // Skip id field in the insert
@@ -22,6 +23,7 @@ export class ProductsRepository {
             values[key] = product[key]
         }
         fields = fields.slice(0, -2); // Remove the last comma and space
+        params = params.slice(0, -2); // Remove the last comma and space
 
         const query = `
             INSERT INTO Products (${fields})
@@ -46,8 +48,8 @@ export class ProductsRepository {
 
     async findByName(name: string): Promise<Product[] | null> {
         const query = `SELECT * FROM Products WHERE name = @Name`;
-        const result = await this.databaseService.executeQuery<Product[]>(query, { Name: name });
-        return result[0] || null;
+        const result = await this.databaseService.executeQuery<Product>(query, { Name: name });
+        return result || null;
     }
 
     async findByCategoryId(categoryId: number): Promise<Product[]> {
@@ -95,6 +97,7 @@ export class ProductsRepository {
         for (const key in product) {
             if (!product[key]) {
                 delete product[key];
+                continue;
             }
 
             params += `${key} = @${key}, `
