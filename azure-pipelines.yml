@@ -5,7 +5,7 @@ resources:
 - repo: self
 
 pool:
-  vmImage: 'ubuntu-latest'
+  name: default
 
 steps:
   - script: |
