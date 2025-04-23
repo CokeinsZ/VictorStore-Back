@@ -21,8 +21,5 @@ steps:
 
   - script: |
       echo "Desplegando en Azure Container Apps..."
-      az containerapp update \
-        --name $(containerAppName) \
-        --resource-group $(resourceGroup) \
-        --image $(dockerHubUsername)/$(imageName):latest
+      az containerapp update --name victorbackcontainer --resource-group Victor-Store --image cokeinsz/victorstore:latest
     displayName: 'Deploy to Azure Container Apps'
