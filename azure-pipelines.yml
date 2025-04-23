@@ -23,7 +23,7 @@ steps:
     displayName: 'Deploy to Azure Container Apps'
     inputs:
       azureSubscription: 'VictorConnection'
-      scriptType: 'bash'
+      scriptType: 'ps'
       scriptLocation: 'inlineScript'
       inlineScript: |
         az containerapp update --name victorbackcontainer --resource-group Victor-Store --image cokeinsz/victorstore:latest
