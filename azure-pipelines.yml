@@ -26,4 +26,4 @@ steps:
       scriptType: 'ps'
       scriptLocation: 'inlineScript'
       inlineScript: |
-        az containerapp update --name victorbackcontainer --resource-group Victor-Store --image cokeinsz/victorstore:latest
+        az containerapp update --name victorbackcontainer --resource-group Victor-Store --image cokeinsz/victorstore:latest --set-env-vars JWT_ACCESS_SECRET=$(JWT_ACCESS_SECRET) JWT_ACCESS_EXPIRATION=$(JWT_ACCESS_EXPIRATION) EMAIL_HOST=$(EMAIL_HOST) EMAIL_PORT=$(EMAIL_PORT) EMAIL_SECURE=$(EMAIL_SECURE) EMAIL_USER=$(EMAIL_USER) EMAIL_PASSWORD=$(EMAIL_PASSWORD) SQL_SERVER_HOST=$(SQL_SERVER_HOST) SQL_SERVER_PORT=$(SQL_SERVER_PORT) SQL_SERVER_USERNAME=$(SQL_SERVER_USERNAME) SQL_SERVER_PASSWORD=$(SQL_SERVER_PASSWORD) SQL_DATABASE=$(SQL_DATABASE) PRIVATE_KEY_PASSPHRASE=$(PRIVATE_KEY_PASSPHRASE)
