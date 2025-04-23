@@ -18,8 +18,12 @@ steps:
       docker build -t $(dockerHubUsername)/$(imageName):latest .
       docker push $(dockerHubUsername)/$(imageName):latest
     displayName: 'Build and Push Docker Image'
-
-  - script: |
-      echo "Desplegando en Azure Container Apps..."
-      az containerapp update --name victorbackcontainer --resource-group Victor-Store --image cokeinsz/victorstore:latest
+    
+  - task: AzureCLI@2
     displayName: 'Deploy to Azure Container Apps'
+    inputs:
+      azureSubscription: 'VictorConnection'
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        az containerapp update --name victorbackcontainer --resource-group Victor-Store --image cokeinsz/victorstore:latest
