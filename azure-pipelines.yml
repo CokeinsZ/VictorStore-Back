@@ -1,0 +1,28 @@
+trigger:
+- main
+
+resources:
+- repo: self
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+  - script: |
+      echo "Autenticando en Docker Hub..."
+      docker login -u $(dockerHubUsername) --password $(dockerHubPassword)
+    displayName: 'Login to Docker Hub'
+
+  - script: |
+      echo "Construyendo y subiendo imagen..."
+      docker build -t $(dockerHubUsername)/$(imageName):latest .
+      docker push $(dockerHubUsername)/$(imageName):latest
+    displayName: 'Build and Push Docker Image'
+
+  - script: |
+      echo "Desplegando en Azure Container Apps..."
+      az containerapp update \
+        --name $(containerAppName) \
+        --resource-group $(resourceGroup) \
+        --image $(dockerHubUsername)/$(imageName):latest
+    displayName: 'Deploy to Azure Container Apps'
